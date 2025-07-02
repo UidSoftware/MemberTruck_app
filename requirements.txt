@@ -1,0 +1,6 @@
+Django
+djangorestframework
+djangorestframework-simplejwt
+psycopg2-binary # Driver PostgreSQL
+gunicorn # Servidor WSGI para produção
+python-dotenv # Para gerenciar variáveis de ambiente em desenvolvimento

@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  # Serviço da API Django
+  web:
+    build: . # Construir a imagem a partir do Dockerfile no diretório atual
+    container_name: membertruck_django_api
+    command: gunicorn membertruck_api.wsgi:application --bind 0.0.0.0:8000 # Comando de execução
+    volumes:
+      - .:/app # Mapeia o diretório atual do seu código para /app no container (bom para desenvolvimento)
+      - static_volume:/app/staticfiles # Volume para arquivos estáticos
+      - media_volume:/app/mediafiles   # Volume para arquivos de mídia
+    ports:
+      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do container
+    env_file:
+      - .env # Carrega variáveis de ambiente do arquivo .env
+    #depends_on:
+      # Não há dependência direta de um container de banco de dados aqui, pois ele é externo
+      # Mas você pode ter outras dependências (ex: Nginx se estivesse em container)
+      # - db
+
+  # Serviço Nginx (Opcional, mas altamente recomendado para produção)
+  nginx:
+    image: nginx:stable-alpine
+    container_name: membertruck_nginx
+    ports:
+      - "8888:80" # Mapeia a porta 8888 do host para a porta 80 do Nginx
+      # - "443:443" # Para HTTPS em produção
+    volumes:
+      - static_volume:/app/staticfiles # Acesso aos arquivos estáticos do Django
+      - media_volume:/app/mediafiles   # Acesso aos arquivos de mídia do Django
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Mapeia a config do Nginx
+    depends_on:
+      - web # Nginx depende da API Django
+    restart: unless-stopped # Inicia automaticamente se cair
+
+volumes:
+  static_volume:
+  media_volume:
