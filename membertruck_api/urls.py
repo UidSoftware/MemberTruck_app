@@ -15,8 +15,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include # Certifique-se que 'include' está importado
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include('membertruck_app.urls')), # Esta é a linha que estava faltando/invertida
 ]

@@ -1,7 +1,8 @@
-from django.contrib import admin
-from django.urls import path, include
+from django.urls import path
+from .views import PessoaList, PessoaDetail # Importe suas views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', include('core.urls')), # Inclui as URLs do seu app 'core'
+    path('pessoas/', PessoaList.as_view(), name='pessoa-list'),
+    path('pessoas/<int:pk>/', PessoaDetail.as_view(), name='pessoa-detail'),
+    # Adicione outras URLs do seu app aqui
 ]

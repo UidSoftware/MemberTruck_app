@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework_simplejwt',
-    'core', # Seu aplicativo principal
+    'membertruck_app', # Seu aplicativo principal
 ]
 
 MIDDLEWARE = [
@@ -121,7 +121,7 @@ MEDIA_ROOT = BASE_DIR / 'mediafiles' # Local para arquivos de mídia
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Custom User Model
-AUTH_USER_MODEL = 'core.Pessoa' # Seu modelo de usuário customizado
+AUTH_USER_MODEL = 'membertruck_app.Pessoa' # Seu modelo de usuário customizado
 
 # Django REST Framework
 REST_FRAMEWORK = {
