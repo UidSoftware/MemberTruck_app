@@ -7,11 +7,12 @@ services:
     container_name: membertruck_django_api
     command: gunicorn membertruck_api.wsgi:application --bind 0.0.0.0:8000 # Comando de execução
     volumes:
+      #- COPY . /app - -------PRODUÇÃO-------
       - .:/app # Mapeia o diretório atual do seu código para /app no container (bom para desenvolvimento)
       - static_volume:/app/staticfiles # Volume para arquivos estáticos
       - media_volume:/app/mediafiles   # Volume para arquivos de mídia
     ports:
-      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do container
+      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do container 
     env_file:
       - .env # Carrega variáveis de ambiente do arquivo .env
     #depends_on:
@@ -24,6 +25,7 @@ services:
     image: nginx:stable-alpine
     container_name: membertruck_nginx
     ports:
+      #- "80:80" # Mapeia a porta 8888 do host para a porta 80 do Nginx - -------PRODUÇÃO-------
       - "8888:80" # Mapeia a porta 8888 do host para a porta 80 do Nginx
       # - "443:443" # Para HTTPS em produção
     volumes:

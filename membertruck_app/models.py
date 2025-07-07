@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
+
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -115,7 +116,9 @@ class Veiculo(models.Model):
     nomeVeic = models.CharField(max_length=100)
     anoVeic = models.SmallIntegerField(null=True, blank=True)
     placaVeic = models.CharField(max_length=10, unique=True)
-    # associado = models.ForeignKey('Associado', on_delete=models.CASCADE, related_name='veiculos') # Adicionar depois de definir Associado
+    associado = models.ForeignKey('Associado', on_delete=models.CASCADE, related_name='veiculos', null=True, blank=True)
+    # O null=True, blank=True é uma boa prática se a associação não for obrigatória no momento da criação do Veículo. ---------------
+    # Se for obrigatória, remova-os e certifique-se de que a lógica de criação garante o associado.
 
     def __str__(self):
         return f"{self.placaVeic} ({self.nomeVeic})"
@@ -126,7 +129,6 @@ class Veiculo(models.Model):
 
 class Funcionario(models.Model):
     idFunc = models.AutoField(primary_key=True)
-    # Relacionamento de 1-para-1 com Pessoa (mas com sua própria PK)
     idPessFunc = models.OneToOneField(Pessoa, on_delete=models.CASCADE, db_column='idPessFunc')
     salarioFunc = models.FloatField(null=True, blank=True) # REAL no SQL
     comissaoFunc = models.FloatField(null=True, blank=True) # REAL no SQL
@@ -141,7 +143,7 @@ class Funcionario(models.Model):
         db_table = 'Funcionario'
 
 # Sinal para criar Funcionario/Associado quando uma Pessoa é criada, se necessário
-# @receiver(post_save, sender=Pessoa)
+# @receiver(post_save, sender=Pessoa)  
 # def create_user_profile(sender, instance, created, **kwargs):
 #     if created and instance.is_staff: # Exemplo: se for staff, cria Funcionario
 #         Funcionario.objects.create(idPessFunc=instance)
@@ -155,13 +157,14 @@ class Associado(models.Model):
     dataAtivacaoAsso = models.DateField(null=True, blank=True)
     dataPagamentoAsso = models.DateField(null=True, blank=True)
     idPlanAsso = models.ForeignKey(Plano, on_delete=models.SET_NULL, null=True, blank=True, db_column='idPlanAsso')
-    idVeicAsso = models.ForeignKey(Veiculo, on_delete=models.SET_NULL, null=True, blank=True, db_column='idVeicAsso') # Associa Veiculo ao Associado
+    idVeicAsso = models.ForeignKey(Veiculo, on_delete=models.SET_NULL, null=True, blank=True, db_column='idVeicAsso', related_name='veiculos_associado') # Associa Veiculo ao Associado
 
     def __str__(self):
         return f"Associado: {self.idPessAsso.nomePess}"
 
     class Meta:
         db_table = 'Associado'
+
 
 # Agora podemos adicionar o ForeignKey de Veiculo para Associado, já que Associado está definido.
 # Se Veiculo for criado antes de Associado, pode dar erro de referência circular.

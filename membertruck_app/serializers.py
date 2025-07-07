@@ -9,16 +9,27 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class PessoaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pessoa
-        # Excluir 'password' para não expor em listagens/detalhes
-        exclude = ('password', 'is_superuser', 'last_login', 'date_joined', 'groups', 'user_permissions')
-        read_only_fields = ('idPess',) # O ID é gerado automaticamente
-        # No caso de criação de pessoa, você pode querer um serializer separado ou ajustar este
-        # para lidar com a senha de forma segura (write_only).
-        # Para criação de usuário:
-        # extra_kwargs = {'password': {'write_only': True}}
-        # def create(self, validated_data):
-        #     user = Pessoa.objects.create_user(**validated_data)
-        #     return user
+        fields = '__all__' # Inclui todos os campos do modelo
+        extra_kwargs = {
+            'password': {'write_only': True}, # Permite escrever, mas não ler (não aparece no GET)
+            'is_superuser': {'read_only': True}, # Apenas leitura
+            'is_staff': {'read_only': True}, # Apenas leitura
+            'is_active': {'read_only': True}, # Apenas leitura
+            'date_joined': {'read_only': True}, # Apenas leitura
+            'last_login': {'read_only': True}, # Apenas leitura
+            # 'groups': {'read_only': True}, # Se você quiser esconder grupos e permissões também
+            # 'user_permissions': {'read_only': True},
+        }
+
+    # Ele garante que o serializer saiba como criar o objeto Pessoa corretamente.
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        user = Pessoa.objects.create_user(**validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        return user
+    
 
 class EnderecoSerializer(serializers.ModelSerializer):
     class Meta:
