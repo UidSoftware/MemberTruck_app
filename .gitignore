@@ -1,5 +1,11 @@
 # Arquivos de variáveis de ambiente
 .env
 
+# Ignorar arquivos de cache do Python
+__pycache__/
+
+# Ignorar banco de dados SQLite
+*.sqlite3
+
 # Ambiente virtual
 venv/
