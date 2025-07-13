@@ -7,19 +7,6 @@ from django.core.exceptions import ImproperlyConfigured # Adicione esta para a S
 # Carrega as variáveis de ambiente do arquivo .env (se existir)
 load_dotenv()
 
-# --- ADICIONE ESTAS LINHAS PARA DEBUG ---
-print(f"\n--- DEBUG DE VARS DE AMBIENTE ---")
-print(f"DJANGO_SECRET_KEY (from env): '{os.environ.get('DJANGO_SECRET_KEY')}'")
-print(f"DJANGO_DEBUG (from env): '{os.environ.get('DJANGO_DEBUG')}'")
-print(f"POSTGRES_DB (from env): '{os.environ.get('POSTGRES_DB')}'")
-print(f"POSTGRES_USER (from env): '{os.environ.get('POSTGRES_USER')}'")
-print(f"POSTGRES_PASSWORD (from env): '{os.environ.get('POSTGRES_PASSWORD')}'")
-print(f"POSTGRES_HOST (from env): '{os.environ.get('POSTGRES_HOST')}'")
-print(f"POSTGRES_PORT (from env): '{os.environ.get('POSTGRES_PORT')}'")
-print(f"--- FIM DO DEBUG ---\n")
-# --- FIM DAS LINHAS DE DEBUG ---
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,6 +23,13 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True' # Padrão False para s
 # Para produção, você pode ter o HOSTS numa variável ou especificar
 ALLOWED_HOSTS_STR = os.environ.get('DJANGO_ALLOWED_HOSTS', '')
 ALLOWED_HOSTS = ALLOWED_HOSTS_STR.split(',') if ALLOWED_HOSTS_STR else []
+
+# Adicione ou modifique esta linha com a URL completa que você está acessando
+CSRF_TRUSTED_ORIGINS = [
+    'http://31.97.240.156:8888', # O IP e porta que você está usando
+    #'http://seu_dominio.com.br', # Se você tiver um domínio, adicione-o também
+    #'https://seu_dominio.com.br', # E para HTTPS, se for configurar no futuro
+]
 
 # Application definition
 
