@@ -1,4 +1,7 @@
 from django.db import models
+from .pessoa import Pessoa # Importe o modelo Pessoa
+from .departamento import Departamento # Importe o modelo Departamento
+from .cargo import Cargo # Importe o modelo Cargo
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
 
@@ -135,6 +138,20 @@ class Funcionario(models.Model):
     dataAdmissaoFunc = models.DateField(null=True, blank=True)
     idDepaFunc = models.ForeignKey(Departamento, on_delete=models.SET_NULL, null=True, blank=True, db_column='idDepaFunc')
     idCargFunc = models.ForeignKey(Cargo, on_delete=models.SET_NULL, null=True, blank=True, db_column='idCargFunc')
+
+    # Este campo 'gestor' é uma chave estrangeira para o próprio modelo Funcionario
+    gestor = models.ForeignKey(
+        'self', # 'self' indica que a chave estrangeira aponta para o próprio modelo
+        on_delete=models.SET_NULL, # Se o gestor for excluído, o campo 'gestor' dos seus consultores será NULL
+        null=True, # Permite que um funcionário não tenha um gestor (ex: o próprio gestor principal)
+        blank=True, # Permite que o campo seja vazio no formulário Django
+        related_name='consultores' # Nome inverso para acessar os consultores de um gestor (ex: gestor.consultores.all())
+    )
+    
+
+    # Opcional: Adicionar um campo booleano para identificar se o funcionário é um gestor
+    # Isso facilita a filtragem ao buscar gestores para o dropdown no frontend.
+    is_gestor = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Funcionário: {self.idPessFunc.nomePess}" # Acesso via relacionamento

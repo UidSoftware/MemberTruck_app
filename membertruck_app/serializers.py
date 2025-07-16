@@ -57,12 +57,52 @@ class VeiculoSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class FuncionarioSerializer(serializers.ModelSerializer):
+
     # Serializa os dados da Pessoa vinculada
     pessoa_data = PessoaSerializer(source='idPessFunc', read_only=True)
 
+    # Serializer aninhado para o relacionamento OneToOne com Pessoa
+    idPessFunc = PessoaSerializer(read_only=True) # Para leitura, mostra os detalhes da Pessoa
+    # Para escrita, você provavelmente precisará de um campo Writable Nested ou lidar com isso na view/serializer
+    # Ou, se você só passa o ID da Pessoa no POST/PUT, usaria:
+    # idPessFunc_id = serializers.PrimaryKeyRelatedField(queryset=Pessoa.objects.all(), source='idPessFunc', write_only=True)
+
+    # Para os relacionamentos ForeignKey (Departamento e Cargo), podemos usar:
+    # 1. PrimaryKeyRelatedField (envia/recebe o ID) - MAIS COMUM PARA ESCRITA
+    idDepaFunc = serializers.PrimaryKeyRelatedField(queryset=Departamento.objects.all(), source='idDepaFunc_id') # Adicionado _id
+    idCargFunc = serializers.PrimaryKeyRelatedField(queryset=Cargo.objects.all(), source='idCargFunc_id') # Adicionado _id
+
+    # 2. StringRelatedField (envia/recebe o __str__ do objeto, read-only) - BOM PARA LEITURA
+    # idDepaFunc_nome = serializers.StringRelatedField(source='idDepaFunc.nomeDepa', read_only=True)
+    # idCargFunc_nome = serializers.StringRelatedField(source='idCargFunc.nomeCarg', read_only=True)
+
+    # --- NOVOS CAMPOS ---
+    # Para o campo 'gestor' (auto-referência ForeignKey)
+    # Ao criar/atualizar um consultor, você enviará o ID do gestor.
+    # Ao listar, ele mostrará o ID do gestor.
+    # Se quiser mais detalhes do gestor ao LISTAR, pode usar um Serializer aninhado ou StringRelatedField.
+    gestor = serializers.PrimaryKeyRelatedField(queryset=Funcionario.objects.all(), allow_null=True)
+
+    # Para o campo booleano 'is_gestor'
+    is_gestor = serializers.BooleanField(required=False) # 'required=False' porque tem default=False no modelo
+
+
     class Meta:
         model = Funcionario
-        fields = '__all__' # Incluirá todos os campos de Funcionario e o relacionamento idPessFunc
+        fields = [
+            'idFunc',
+            'idPessFunc',
+            # 'idPessFunc_id', # Se usar o campo write_only para idPessFunc
+            'salarioFunc',
+            'comissaoFunc',
+            'dataAdmissaoFunc',
+            'idDepaFunc',
+            # 'idDepaFunc_nome', # Se usar
+            'idCargFunc',
+            # 'idCargFunc_nome', # Se usar
+            'gestor', # Inclua o novo campo gestor
+            'is_gestor' # Inclua o novo campo is_gestor
+        ]
         read_only_fields = ('idFunc',) # O ID é gerado automaticamente
 
 class AssociadoSerializer(serializers.ModelSerializer):
