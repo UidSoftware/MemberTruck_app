@@ -1,5 +1,5 @@
 # Use uma imagem oficial do Python como base
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim
 
 # Defina o diretório de trabalho dentro do container
 WORKDIR /app
@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Instale as dependências Python
-RUN pip install --no-cache-dir -r requirements.txt django-cors-headers
+RUN pip install --no-cache-dir -r requirements.txt 
 
 
 # Copie todo o código da aplicação para o diretório de trabalho
@@ -19,12 +19,6 @@ RUN python manage.py collectstatic --noinput
 
 # Expor a porta que o Gunicorn/Uvicorn irá usar
 EXPOSE 8000
-
-# Iniciar tudo
-RUN docker compose down --remove-orphans
-RUN docker compose build
-RUN docker compose run web python manage.py migrate
-RUN docker compose up -d
 
 # Comando para rodar a aplicação Gunicorn em produção
 # Adapte 'membertruck_api.wsgi' para o seu módulo WSGI real

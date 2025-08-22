@@ -1,6 +1,7 @@
 Django
 djangorestframework
 djangorestframework-simplejwt
+django-cors-headers
 psycopg2-binary # Driver PostgreSQL
 gunicorn # Servidor WSGI para produção
 python-dotenv # Para gerenciar variáveis de ambiente em desenvolvimento
