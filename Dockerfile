@@ -24,3 +24,8 @@ EXPOSE 8000
 # Adapte 'membertruck_api.wsgi' para o seu módulo WSGI real
 # Use 4 workers e bind para 0.0.0.0:8000
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "membertruck_api.wsgi:application"]
+
+# Iniciar tudo
+RUN docker compose build
+RUN docker compose run web python manage.py migrate
+RUN docker compose up -d

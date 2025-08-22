@@ -188,5 +188,5 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
     # Customiza o serializer para usar 'usuarioPess' como campo de login
-    'TOKEN_OBTAIN_SERIALIZER': 'core.serializers.MyTokenObtainPairSerializer',
+    'TOKEN_OBTAIN_SERIALIZER': 'membertruck_app.serializers.MyTokenObtainPairSerializer',
 }

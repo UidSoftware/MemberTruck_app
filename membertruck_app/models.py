@@ -1,10 +1,6 @@
 from django.db import models
-
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.utils import timezone
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
 
 # --- Manager para o Modelo Pessoa (agora seu USER MODEL) ---
 class PessoaManager(BaseUserManager):
@@ -12,7 +8,7 @@ class PessoaManager(BaseUserManager):
         if not usuarioPess:
             raise ValueError('O campo de usuário (usuarioPess) deve ser definido')
         user = self.model(usuarioPess=usuarioPess, **extra_fields)
-        user.set_password(password) # Criptografa a senha
+        user.set_password(password)  # Criptografa a senha
         user.save(using=self._db)
         return user
 
@@ -28,46 +24,51 @@ class PessoaManager(BaseUserManager):
 
         return self.create_user(usuarioPess, password, **extra_fields)
 
+
 # --- Modelo Pessoa (Seu AUTH_USER_MODEL) ---
 class Pessoa(AbstractBaseUser, PermissionsMixin):
-    # Usando seu idPess SERIAL PRIMARY KEY do SQL
     idPess = models.AutoField(primary_key=True)
     nomePess = models.CharField(max_length=255)
     telefonePess = models.CharField(max_length=20, blank=True, null=True)
     documentoPess = models.CharField(max_length=30, unique=True, blank=True, null=True)
     nascimentoPess = models.DateField(null=True, blank=True)
-    emailPess = models.EmailField(unique=True, blank=True, null=True) # Ainda pode ser único
-    # senhaPess TEXT NOT NULL - O Django gerencia isso com o AbstractBaseUser, não defina aqui.
-    usuarioPess = models.CharField(max_length=150, unique=True) # CAMPO DE LOGIN
+    emailPess = models.EmailField(unique=True, blank=True, null=True)
+    usuarioPess = models.CharField(max_length=150, unique=True)  # CAMPO DE LOGIN
 
     # Campos de permissão para AbstractBaseUser
     is_staff = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
-    is_superuser = models.BooleanField(default=False) # Adicionado para corresponder ao DDL
+    is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
-    last_login = models.DateTimeField(null=True, blank=True) # Adicionado para corresponder ao DDL
+    last_login = models.DateTimeField(null=True, blank=True)
+
+    # Relacionamento com Endereco
+    idEndePess = models.OneToOneField(
+        'Endereco', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        db_column='idEndePess'
+    )
 
     objects = PessoaManager()
 
-    USERNAME_FIELD = 'usuarioPess' # AGORA O CAMPO DE LOGIN É 'usuarioPess'
-    REQUIRED_FIELDS = ['nomePess', 'emailPess'] # Campos obrigatórios para createsuperuser (além do USERNAME_FIELD e password)
-
-    # Relacionamento OneToOne com Endereco
-    idEndePess = models.OneToOneField('Endereco', on_delete=models.SET_NULL, null=True, blank=True, db_column='idEndePess')
+    USERNAME_FIELD = 'usuarioPess'
+    REQUIRED_FIELDS = ['nomePess', 'emailPess']
 
     def __str__(self):
         return self.usuarioPess
 
     class Meta:
-        db_table = 'Pessoa' # Garante que o Django use o nome de tabela exato
+        db_table = 'Pessoa'
         verbose_name_plural = "Pessoas"
 
 
 class Endereco(models.Model):
     idEnde = models.AutoField(primary_key=True)
-    cepEnde = models.CharField(max_length=10, blank=True, null=True) # Ajustado para CharField
+    cepEnde = models.CharField(max_length=10, blank=True, null=True)
     logadouroEnde = models.TextField()
-    numeroEnde = models.CharField(max_length=10, blank=True, null=True) # Ajustado para CharField
+    numeroEnde = models.CharField(max_length=10, blank=True, null=True)
     complementoEnde = models.TextField(blank=True, null=True)
     bairroEnde = models.TextField()
     cidadeEnde = models.TextField()
@@ -112,67 +113,76 @@ class Plano(models.Model):
         db_table = 'Plano'
 
 
-class Veiculo(models.Model):
-    idVeic = models.AutoField(primary_key=True)
-    nomeVeic = models.CharField(max_length=100)
-    anoVeic = models.SmallIntegerField(null=True, blank=True)
-    placaVeic = models.CharField(max_length=10, unique=True)
-    associado = models.ForeignKey('Associado', on_delete=models.CASCADE, related_name='veiculos', null=True, blank=True)
-    # O null=True, blank=True é uma boa prática se a associação não for obrigatória no momento da criação do Veículo. ---------------
-    # Se for obrigatória, remova-os e certifique-se de que a lógica de criação garante o associado.
-
-    def __str__(self):
-        return f"{self.placaVeic} ({self.nomeVeic})"
-
-    class Meta:
-        db_table = 'Veiculo'
-
-
 class Funcionario(models.Model):
     idFunc = models.AutoField(primary_key=True)
-    idPessFunc = models.OneToOneField(Pessoa, on_delete=models.CASCADE, db_column='idPessFunc')
-    salarioFunc = models.FloatField(null=True, blank=True) # REAL no SQL
-    comissaoFunc = models.FloatField(null=True, blank=True) # REAL no SQL
+    idPessFunc = models.OneToOneField(
+        Pessoa, 
+        on_delete=models.CASCADE, 
+        db_column='idPessFunc'
+    )
+    salarioFunc = models.FloatField(null=True, blank=True)
+    comissaoFunc = models.FloatField(null=True, blank=True)
     dataAdmissaoFunc = models.DateField(null=True, blank=True)
-    idDepaFunc = models.ForeignKey(Departamento, on_delete=models.SET_NULL, null=True, blank=True, db_column='idDepaFunc')
-    idCargFunc = models.ForeignKey(Cargo, on_delete=models.SET_NULL, null=True, blank=True, db_column='idCargFunc')
+    idDepaFunc = models.ForeignKey(
+        Departamento, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        db_column='idDepaFunc'
+    )
+    idCargFunc = models.ForeignKey(
+        Cargo, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        db_column='idCargFunc'
+    )
 
-    # Este campo 'gestor' é uma chave estrangeira para o próprio modelo Funcionario
+    # Relacionamento gestor-consultor
     gestor = models.ForeignKey(
-        'self', # 'self' indica que a chave estrangeira aponta para o próprio modelo
-        on_delete=models.SET_NULL, # Se o gestor for excluído, o campo 'gestor' dos seus consultores será NULL
-        null=True, # Permite que um funcionário não tenha um gestor (ex: o próprio gestor principal)
-        blank=True, # Permite que o campo seja vazio no formulário Django
-        related_name='consultores' # Nome inverso para acessar os consultores de um gestor (ex: gestor.consultores.all())
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='consultores'
     )
     
-
-    # Opcional: Adicionar um campo booleano para identificar se o funcionário é um gestor
-    # Isso facilita a filtragem ao buscar gestores para o dropdown no frontend.
+    # Identificar se é gestor
     is_gestor = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Funcionário: {self.idPessFunc.nomePess}" # Acesso via relacionamento
+        return f"Funcionário: {self.idPessFunc.nomePess}"
 
     class Meta:
         db_table = 'Funcionario'
 
-# Sinal para criar Funcionario/Associado quando uma Pessoa é criada, se necessário
-# @receiver(post_save, sender=Pessoa)  
-# def create_user_profile(sender, instance, created, **kwargs):
-#     if created and instance.is_staff: # Exemplo: se for staff, cria Funcionario
-#         Funcionario.objects.create(idPessFunc=instance)
-#     # if created and not instance.is_staff: # Exemplo: se não for staff, cria Associado
-#     #     Associado.objects.create(idPessAsso=instance)
-
 
 class Associado(models.Model):
     idAsso = models.AutoField(primary_key=True)
-    idPessAsso = models.OneToOneField(Pessoa, on_delete=models.CASCADE, db_column='idPessAsso')
+    idPessAsso = models.OneToOneField(
+        Pessoa, 
+        on_delete=models.CASCADE, 
+        db_column='idPessAsso'
+    )
     dataAtivacaoAsso = models.DateField(null=True, blank=True)
     dataPagamentoAsso = models.DateField(null=True, blank=True)
-    idPlanAsso = models.ForeignKey(Plano, on_delete=models.SET_NULL, null=True, blank=True, db_column='idPlanAsso')
-    idVeicAsso = models.ForeignKey(Veiculo, on_delete=models.SET_NULL, null=True, blank=True, db_column='idVeicAsso', related_name='veiculos_associado') # Associa Veiculo ao Associado
+    idPlanAsso = models.ForeignKey(
+        Plano, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        db_column='idPlanAsso'
+    )
+    
+    # Relacionamento com consultor (quem indicou)
+    consultor = models.ForeignKey(
+        Funcionario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='associados_indicados',
+        limit_choices_to={'is_gestor': False}  # Apenas consultores, não gestores
+    )
 
     def __str__(self):
         return f"Associado: {self.idPessAsso.nomePess}"
@@ -181,9 +191,56 @@ class Associado(models.Model):
         db_table = 'Associado'
 
 
-# Agora podemos adicionar o ForeignKey de Veiculo para Associado, já que Associado está definido.
-# Se Veiculo for criado antes de Associado, pode dar erro de referência circular.
-# Para evitar isso, pode-se usar uma string 'Associado' no ForeignKey, ou definir Veiculo depois.
-# Ou usar o sinal post_save para criar veiculos se for o caso.
-# Vou adicionar no modelo Veiculo uma linha de relacionamento comentado acima.
-# Se precisar, descomente e faça um `makemigrations` e `migrate` novamente.
+# CORREÇÃO: Veiculo pertence a Associado (1 para muitos)
+class Veiculo(models.Model):
+    idVeic = models.AutoField(primary_key=True)
+    nomeVeic = models.CharField(max_length=100)
+    anoVeic = models.SmallIntegerField(null=True, blank=True)
+    placaVeic = models.CharField(max_length=10, unique=True)
+    
+    # Um veículo pertence a um associado, um associado pode ter vários veículos
+    associado = models.ForeignKey(
+        Associado,
+        on_delete=models.CASCADE,
+        related_name='veiculos'  # associado.veiculos.all()
+    )
+
+    def __str__(self):
+        return f"{self.placaVeic} ({self.nomeVeic})"
+
+    class Meta:
+        db_table = 'Veiculo'
+
+
+# Modelo para histórico de mensagens WhatsApp (adicional)
+class MensagemWhatsApp(models.Model):
+    TIPO_CHOICES = [
+        ('cobranca', 'Cobrança'),
+        ('comemorativa', 'Comemorativa'),
+        ('promocional', 'Promocional'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('pendente', 'Pendente'),
+        ('enviada', 'Enviada'),
+        ('erro', 'Erro'),
+    ]
+    
+    idMensagem = models.AutoField(primary_key=True)
+    associado = models.ForeignKey(
+        Associado,
+        on_delete=models.CASCADE,
+        related_name='mensagens'
+    )
+    tipoMensagem = models.CharField(max_length=20, choices=TIPO_CHOICES)
+    conteudo = models.TextField()
+    dataEnvio = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pendente')
+    
+    def __str__(self):
+        return f"Mensagem {self.tipoMensagem} para {self.associado.idPessAsso.nomePess}"
+    
+    class Meta:
+        db_table = 'MensagemWhatsApp'
+        verbose_name = "Mensagem WhatsApp"
+        verbose_name_plural = "Mensagens WhatsApp"
