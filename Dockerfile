@@ -8,7 +8,8 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Instale as dependências Python
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt django-cors-headers
+
 
 # Copie todo o código da aplicação para o diretório de trabalho
 COPY . .

@@ -5,4 +5,5 @@ urlpatterns = [
     path('pessoas/', PessoaList.as_view(), name='pessoa-list'),
     path('pessoas/<int:pk>/', PessoaDetail.as_view(), name='pessoa-detail'),
     # Adicione outras URLs do seu app aqui
+    
 ]
