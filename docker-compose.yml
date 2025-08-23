@@ -1,41 +1,32 @@
-version: '3.8'
-
 services:
-  # Serviço da API Django
   web:
-    build: . # Construir a imagem a partir do Dockerfile no diretório atual
-    container_name: membertruck_django_api
-    command: gunicorn membertruck_api.wsgi:application --bind 0.0.0.0:8000 # Comando de execução
+    build: .
+    container_name: membertruck_django_api_prod
+    command: gunicorn membertruck_api.wsgi:application --bind 0.0.0.0:8000 -- workers 3
     volumes:
-      #- COPY . /app - -------PRODUÇÃO-------
-      - .:/app # Mapeia o diretório atual do seu código para /app no container (bom para desenvolvimento)
-      - static_volume:/app/staticfiles # Volume para arquivos estáticos
-      - media_volume:/app/mediafiles   # Volume para arquivos de mídia
+      - static_volume:/app/staticfiles
+      - media_volume:/app/mediafiles
+  
     ports:
-      - "8000:8000" # Mapeia a porta 8000 do host para a porta 8000 do container 
+    - "8000:8000"
     env_file:
-      - .env # Carrega variáveis de ambiente do arquivo .env
-    #depends_on:
-      # Não há dependência direta de um container de banco de dados aqui, pois ele é externo
-      # Mas você pode ter outras dependências (ex: Nginx se estivesse em container)
-      # - db
+    - .env.prod
+    restart: unless-stopped
 
-  # Serviço Nginx (Opcional, mas altamente recomendado para produção)
   nginx:
     image: nginx:stable-alpine
-    container_name: membertruck_nginx
+    container_name: membertruck_nginx_prod
     ports:
-      #- "80:80" # Mapeia a porta 8888 do host para a porta 80 do Nginx - -------PRODUÇÃO-------
-      - "8888:80" # Mapeia a porta 8888 do host para a porta 80 do Nginx
-      # - "443:443" # Para HTTPS em produção
+    - "80:80"
+    - "443:443" # Para HTTPS
     volumes:
-      - static_volume:/app/staticfiles # Acesso aos arquivos estáticos do Django
-      - media_volume:/app/mediafiles   # Acesso aos arquivos de mídia do Django
-      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro # Mapeia a config do Nginx
+    - static_volume:/app/staticfiles
+    - media_volume:/app/mediafiles
+    - ./nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+    - ./ssl:/etc/nginx/ssl:ro # Certificados SSL
     depends_on:
-      - web # Nginx depende da API Django
-    restart: unless-stopped # Inicia automaticamente se cair
-
+    - web
+    restart: unless-stopped
 volumes:
   static_volume:
   media_volume:

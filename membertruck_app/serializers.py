@@ -1,20 +1,59 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
 from .models import (
     Pessoa, Endereco, Departamento, Cargo, Plano, 
     Veiculo, Funcionario, Associado, MensagemWhatsApp
 )
 
 
+
+
 # Serializer customizado para JWT Login
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     username_field = 'usuarioPess'  # Campo de login customizado
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove os campos padrão para adicionar os customizados
+        self.fields.pop("username", None)
+        self.fields.pop("password", None)
+        self.fields[self.username_field] = serializers.CharField()
+        self.fields["password"] = serializers.CharField(write_only=True)
+
     def validate(self, attrs):
-        # Chama a validação padrão
+        # 1. Validação da autenticação (sua lógica sugerida)
+        usuario_pess = attrs.get(self.username_field)
+        password = attrs.get("password")
+
+        if not usuario_pess or not password:
+            raise serializers.ValidationError(
+                'Deve incluir "usuarioPess" e "password".'
+            )
+
+        user = authenticate(
+            request=self.context.get('request'),
+            username=usuario_pess, # Use username aqui para o authenticate
+            password=password
+        )
+
+        if not user:
+            raise serializers.ValidationError(
+                'Não foi possível fazer login com as credenciais fornecidas.'
+            )
+        if not user.is_active:
+            raise serializers.ValidationError(
+                'Conta de usuário desabilitada.'
+            )
+        
+        # Define self.user para que super().validate possa acessá-lo
+        self.user = user
+
+        # 2. Chama a validação padrão do TokenObtainPairSerializer
+        # Isso irá gerar os tokens 'refresh' e 'access'
         data = super().validate(attrs)
         
-        # Adiciona informações extras ao token response
+        # 3. Adiciona informações extras ao token response (sua lógica original)
         data['user_info'] = {
             'idPess': self.user.idPess,
             'nomePess': self.user.nomePess,
@@ -24,7 +63,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
             'is_superuser': self.user.is_superuser,
         }
         
-        # Verifica se é funcionário ou associado
+        # 4. Verifica se é funcionário ou associado
         try:
             funcionario = Funcionario.objects.get(idPessFunc=self.user)
             data['user_info']['tipo_usuario'] = 'funcionario'
@@ -36,7 +75,7 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
                 data['user_info']['tipo_usuario'] = 'associado'
                 data['user_info']['associado_id'] = associado.idAsso
             except Associado.DoesNotExist:
-                data['user_info']['tipo_usuario'] = 'admin'
+                data['user_info']['tipo_usuario'] = 'admin' # Ou outro tipo padrão se não for nenhum dos dois
         
         return data
 
