@@ -7,6 +7,9 @@ from django.db import transaction
 from django.contrib.auth import authenticate
 from django.core.exceptions import ValidationError
 from rest_framework import serializers
+from django.db import connection
+from django.core.cache import cache
+import redis
 
 from .models import (
     Pessoa, Endereco, Departamento, Cargo, Plano, 
@@ -19,6 +22,51 @@ from .serializers import (
     MyTokenObtainPairSerializer, FuncionarioCompletoSerializer, 
     AssociadoCompletoSerializer
 )
+
+# =================== VIEWS DE AUTENTICAÇÃO ===================
+
+class HealthCheckView(APIView):
+    """Endpoint para verificar saúde do sistema"""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        health_status = {
+            'status': 'healthy',
+            'timestamp': timezone.now().isoformat(),
+            'checks': {}
+        }
+
+        # Verificar banco de dados
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+            health_status['checks']['database'] = 'healthy'
+        except Exception as e:
+            health_status['checks']['database'] = f'unhealthy: {str(e)}'
+            health_status['status'] = 'unhealthy'
+
+        # Verificar cache (se configurado)
+        try:
+            cache.set('health_check', 'ok', 30)
+            cache.get('health_check')
+            health_status['checks']['cache'] = 'healthy'
+        except Exception as e:
+            health_status['checks']['cache'] = f'unhealthy: {str(e)}'
+
+        # Verificar espaço em disco
+        import shutil
+        try:
+            total, used, free = shutil.disk_usage('/')
+            free_percent = (free / total) * 100
+            if free_percent < 10:
+                health_status['checks']['disk'] = f'warning: {free_percent:.1f}% free'
+            else:
+                health_status['checks']['disk'] = 'healthy'
+        except Exception as e:
+            health_status['checks']['disk'] = f'error: {str(e)}'
+        
+        status_code = 200 if health_status['status'] == 'healthy' else 503
+        return Response(health_status, status=status_code)
 
 
 # =================== VIEWS DE AUTENTICAÇÃO ===================
@@ -404,14 +452,3 @@ class DashboardView(APIView):
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-# =================== VIEW DE TESTE DE CONEXÃO ===================
-
-class TesteConexaoView(APIView):
-    """View simples para testar a conexão da API"""
-    permission_classes = [AllowAny]
-    
-    def get(self, request):
-        return Response({
-            'message': 'API funcionando corretamente',
-            'timestamp': timezone.now()
-        }, status=status.HTTP_200_OK)
